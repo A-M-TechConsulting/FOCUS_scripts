@@ -1,0 +1,16 @@
+[
+    {
+        "CRID": "ChargePeriodEnd-C-003-M",
+        "Function": "Format",
+        "Reference": "Charge Period End",
+        "Keyword": "MUST",
+        "ApplicabilityCriteria": "All Rows",
+        "Condition": "All Rows",
+        "MustSatisfy": "ChargePeriodEnd MUST conform to DateTimeFormat requirements.",
+        "Requirement": "DateTimeFormat:CR",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": "Cross-column reference: DateTimeFormat"
+    }
+]

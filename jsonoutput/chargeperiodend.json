@@ -1,0 +1,80 @@
+{
+    "ChargePeriodEnd-C-000-M": {
+        "Function": "Composite",
+        "Reference": "Charge Period End",
+        "Keyword": "\u2014",
+        "ApplicabilityCriteria": "All Rows",
+        "Condition": "All Rows",
+        "MustSatisfy": "\u2014",
+        "Requirement": "AND(ChargePeriodEnd-D-001-M, ChargePeriodEnd-C-002-M, ChargePeriodEnd-C-003-M, ChargePeriodEnd-C-004-M, ChargePeriodEnd-C-005-M)",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": ""
+    },
+    "ChargePeriodEnd-D-001-M": {
+        "Function": "Presence",
+        "Reference": "Charge Period End",
+        "Keyword": "MUST",
+        "ApplicabilityCriteria": "Dataset includes ChargePeriodEnd column",
+        "Condition": "All Rows",
+        "MustSatisfy": "ChargePeriodEnd MUST be present in a FOCUS dataset.",
+        "Requirement": "null",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": ""
+    },
+    "ChargePeriodEnd-C-002-M": {
+        "Function": "DataType",
+        "Reference": "Charge Period End",
+        "Keyword": "MUST",
+        "ApplicabilityCriteria": "All Rows",
+        "Condition": "All Rows",
+        "MustSatisfy": "ChargePeriodEnd MUST be of type Date/Time.",
+        "Requirement": "null",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": ""
+    },
+    "ChargePeriodEnd-C-003-M": {
+        "Function": "Format",
+        "Reference": "Charge Period End",
+        "Keyword": "MUST",
+        "ApplicabilityCriteria": "All Rows",
+        "Condition": "All Rows",
+        "MustSatisfy": "ChargePeriodEnd MUST conform to DateTimeFormat requirements.",
+        "Requirement": "DateTimeFormat:CR",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": "Cross-column reference: DateTimeFormat"
+    },
+    "ChargePeriodEnd-C-004-M": {
+        "Function": "NullabilityRules",
+        "Reference": "Charge Period End",
+        "Keyword": "MUST NOT",
+        "ApplicabilityCriteria": "All Rows",
+        "Condition": "All Rows",
+        "MustSatisfy": "ChargePeriodEnd MUST NOT be null.",
+        "Requirement": "null",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": ""
+    },
+    "ChargePeriodEnd-C-005-M": {
+        "Function": "Validation",
+        "Reference": "Charge Period End",
+        "Keyword": "MUST",
+        "ApplicabilityCriteria": "All Rows",
+        "Condition": "All Rows",
+        "MustSatisfy": "ChargePeriodEnd MUST be the exclusive end bound of the effective period of the charge.",
+        "Requirement": "null",
+        "Type": "static",
+        "CRVersionIntroduced": "1.2",
+        "Status": "active",
+        "Notes": ""
+    }
+}

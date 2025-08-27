@@ -1,0 +1,73 @@
+name: Run JSON conversion script.
+
+on:
+  push:
+    paths:
+      - 'FOCUS_Spec/1121-ai-align-on-approach-for-scrs/specification/conformance/cr-stage1/*.md'
+  workflow_dispatch:
+    inputs:
+      md_filename:
+        description: 'Markdown filename (relative to repo root or checked out repo)'
+        required: true
+        default: 'FOCUS_script/markdown_tables/example.md'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Checkout other repository
+        uses: actions/checkout@v4
+        with:
+          repository: A-M-TechConsulting/FOCUS_Spec
+          ref: 1121-ai-align-on-approach-for-scrs
+          path: FOCUS_Spec
+          # token: ${{ secrets.GITHUB_TOKEN }} # Uncomment if other repo is private
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install -r FOCUS_script/requirements.txt
+
+      - name: Run conversion script on all changed markdown files
+        run: |
+          for file in ${{ join(github.event.head_commit.modified, ' ') }}; do
+            if [[ $file == *.md ]]; then
+              python FOCUS_script/jsonConversion.py "$file"
+            fi
+          done
+
+  manual-run:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Checkout other repository
+        uses: actions/checkout@v4
+        with:
+          repository: A-M-TechConsulting/FOCUS_Spec
+          ref: 1121-ai-align-on-approach-for-scrs
+          path: FOCUS_Spec
+          # token: ${{ secrets.GITHUB_TOKEN }} # Uncomment if other repo is private
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install -r FOCUS_script/requirements.txt
+
+      - name: Run conversion script with input file
+        run: |
+          python FOCUS_script/jsonConversion.py "${{ github.event.inputs.md_filename }}"

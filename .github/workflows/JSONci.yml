@@ -9,7 +9,7 @@ on:
       md_filename:
         description: 'Markdown filename (relative to repo root or checked out repo)'
         required: true
-        default: 'FOCUS_script/markdown_tables/example.md'
+        default: 'FOCUS_Spec/1121-ai-align-on-approach-for-scrs/specification/conformance/cr-stage1/*.md'
 
 jobs:
   run-script:

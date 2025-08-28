@@ -1,6 +1,42 @@
 import json
 import argparse
 import os
+import jsonschema
+
+# Updated JSON schema to match your desired output structure
+example_schema = {
+    "type": "object",
+    "patternProperties": {
+        "^.*$": {
+            "type": "object",
+            "properties": {
+                "Function": {"type": "string"},
+                "Reference": {"type": "string"},
+                "EntityType": {"type": "string"},
+                "ApplicabilityCriteria": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "Type": {"type": "string"},
+                "ValidationCriteria": {
+                    "type": "object",
+                    "properties": {
+                        "MustSatisfy": {"type": "string"},
+                        "Keyword": {"type": "string"},
+                        "Requirement": {"type": "string"},
+                        "Condition": {"type": "string"},
+                        "Dependencies": {"type": "array", "items": {"type": "string"}}
+                    },
+                    "additionalProperties": True
+                },
+                "CRVersionIntroduced": {"type": "string"},
+                "Status": {"type": "string"},
+                "Notes": {"type": "string"}
+            },
+            "additionalProperties": True
+        }
+    }
+}
 
 def markdown_table_to_nested_json(markdown_string):
     """
@@ -17,85 +53,113 @@ def markdown_table_to_nested_json(markdown_string):
 
     lines = markdown_string.strip().splitlines()
 
-    #Adjust for 0-based indexing: line 6 is index 5, line 8 is index 7
-    header_line_index = 5  # Change if your header is at a different line
-    data_start_line_index = header_line_index + 2  # Usually header + separator
-
-    if len(lines) < data_start_line_index + 1:
-        print("Warning: Markdown content is too short to contain a table at the specifiied lines.")
-        return {}
-    
-    # Extract headers from the specified line
-    try:
-        header_line = lines[header_line_index]
-        # Splitting headers, without striping empty strings only empty spaces. 
-        headers = [h.strip() for h in header_line.split('|')]
-        # Filter out the empty entries from the start and end of the split
-        headers = [h for h in headers if h]
-    except IndexError:
-        print(f"Error: Could not find header line at index {header_line_index}.")
+    # Find the header line (the one with | CRID | ...)
+    header_line = next((line for line in lines if line.strip().startswith('| CRID')), None)
+    if not header_line:
+        print("Error: Could not find header line starting with '| CRID'.")
         return {}
 
-    # Ensure CRID column exists
-    #if 'CRID' not in headers:
-       # print("Error: The Markdown table must contain a 'CRID' column.")
-       # return []
-    
-    crid_index = headers.index('CRID')
+    headers = [h.strip() for h in header_line.split('|') if h.strip()]
+    header_indices = {h: i for i, h in enumerate(headers)}
 
-    #Check for "CRID" column and get its index if it exists
-    crid_index = headers.index('CRID') if 'CRID' in headers else -1
-    if crid_index == -1:
-        print("Warning: 'CRID' column not found. The resulting JSON will not include a crid attribute.")
+    # Find all data lines: lines that start with '|' and have a non-empty CRID field
+    data_lines = [
+        line for line in lines
+        if line.strip().startswith('|')
+           and not line.strip().startswith('| CRID')
+           and not set(line.strip()).issubset({'|', '-'})  # skip separator lines
+           and line.split('|')[1].strip()                  # CRID field is not empty
+           and not all(c == '-' for c in line.split('|')[1].strip())  # skip dashed CRID
+    ]
 
-    # Data starts from data_start_line_index
-    data_lines = lines[data_start_line_index:]
+    result = {}
 
-    # Initialize a dict to store all row objects by CRID
-    final_json_data = {}
-
-    for i, line in enumerate(data_lines):
-        values = [v.strip() for v in line.split('|')]
-        if values and values[0] == '':
-            values = values[1:]
-        if values and values[-1] == '':
-            values = values[:-1]
-
-        # Pad values to match headers length
+    for line in data_lines:
+        values = [v.strip() for v in line.split('|')[1:-1]]
         if len(values) < len(headers):
             values += [''] * (len(headers) - len(values))
 
-        crid = values[crid_index]
-        if crid:
-            row_entry = {}
-            for j, header in enumerate(headers):
-                if header != 'CRID':
-                    row_entry[header] = values[j]
-            final_json_data[crid] = row_entry
+        crid = values[header_indices['CRID']]
 
-    return final_json_data
+        # Build ValidationCriteria dictionary
+        validation_criteria = {
+            "MustSatisfy": values[header_indices.get('MustSatisfy', '')],
+            "Keyword": values[header_indices.get('Keyword', '')],
+            "Requirement": values[header_indices.get('Requirement', '')],
+            "Condition": values[header_indices.get('Condition', '')],
+            "Dependencies": []  # You can parse dependencies from Requirement if needed
+        }
+
+        # Build ApplicabilityCriteria as a list
+        applicability = [values[header_indices.get('ApplicabilityCriteria', '')]] if values[header_indices.get('ApplicabilityCriteria', '')] else []
+
+        # Build the output dictionary for this CRID
+        result[crid] = {
+            "Function": values[header_indices.get('Function', '')],
+            "Reference": values[header_indices.get('Reference', '')],
+            "EntityType": "Column",
+            "ApplicabilityCriteria": applicability,
+            "Type": values[header_indices.get('Type', '')].capitalize(),
+            "ValidationCriteria": validation_criteria,
+            "CRVersionIntroduced": values[header_indices.get('CRVersionIntroduced', '')],
+            "Status": values[header_indices.get('Status', '')].capitalize(),
+            "Notes": values[header_indices.get('Notes', '')]
+        }
+
+    return result
+
+def save_json_output(data, output_filename, output_dir='jsonoutput'):
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_filename)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4)
+
+def process_all_md_files(input_dir, output_dir='jsonoutput'):
+    for filename in os.listdir(input_dir):
+        if filename.endswith('.md'):
+            input_path = os.path.join(input_dir, filename)
+            with open(input_path, 'r', encoding='utf-8') as f:
+                markdown_string = f.read()
+            json_data = markdown_table_to_nested_json(markdown_string)
+            base_name = os.path.splitext(filename)[0]
+            if base_name.endswith('_cr'):
+                base_name = base_name[:-3]
+            output_filename = base_name + '.json'
+            if validate_json(json_data, example_schema):
+                save_json_output(json_data, output_filename, output_dir)
+            else:
+                print(f"Validation failed for {filename}, not saving output.")
+
+def validate_json(data, schema):
+    try:
+        jsonschema.validate(instance=data, schema=schema)
+        print("JSON data is valid against the schema.")
+        return True
+    except jsonschema.ValidationError as e:
+        print(f"JSON validation error: {e.message}")
+        return False
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert Markdown table file into a JSON file based on CRIDs.")
-    parser.add_argument("input_file", help="Path to the input Markdown file.")
-    parser.add_argument("-o","--output_file", help="Path to the output JSON file.")
+    parser = argparse.ArgumentParser(description="Convert Markdown table files in a directory to JSON files.")
+    parser.add_argument("input_path", help="Path to the input Markdown file or directory.")
     args = parser.parse_args()
 
-    input_file_path = args.input_file
-    output_file_path = args.output_file
+    input_path = args.input_path
 
-    if not os.path.exists(input_file_path):
-        print(f"Error: Input file '{input_file_path}' not found.")
+    if os.path.isdir(input_path):
+        process_all_md_files(input_path)
+    elif os.path.isfile(input_path):
+        with open(input_path, 'r', encoding='utf-8') as f:
+            markdown_content = f.read()
+        json_data = markdown_table_to_nested_json(markdown_content)
+        base_name = os.path.splitext(os.path.basename(input_path))[0]
+        if base_name.endswith('_cr'):
+            base_name = base_name[:-3]
+        output_filename = base_name + '.json'
+        if validate_json(json_data, example_schema):
+            save_json_output(json_data, output_filename)
+            print(f"JSON output successfully written to 'jsonoutput/{output_filename}'.")
+        else:
+            print("Validation failed, output not saved.")
     else:
-        try:
-            with open(input_file_path, 'r', encoding='utf-8') as f:
-                markdown_content = f.read()
-
-            json_data = markdown_table_to_nested_json(markdown_content)
-
-            with open(output_file_path, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, indent=4)
-            print(f"JSON output successfully written to '{output_file_path}'.")
-
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        print(f"Error: '{input_path}' is not a valid file or directory.")

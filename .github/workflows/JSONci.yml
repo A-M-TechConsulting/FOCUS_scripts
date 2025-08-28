@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r FOCUS_script/requirements.txt
+          pip install -r FOCUS_scripts/requirements.txt
 
       - name: Run conversion script on all changed markdown files
         run: |

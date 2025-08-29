@@ -64,9 +64,9 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
-        run: |
-          pip install -r FOCUS_scripts/requirements.txt
+    #  - name: Install dependencies
+    #    run: |
+    #      pip install -r FOCUS_scripts/requirements.txt
 
       - name: Run conversion script with input file
         run: |

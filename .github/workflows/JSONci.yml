@@ -70,4 +70,4 @@ jobs:
 
       - name: Run conversion script with input file
         run: |
-          python FOCUS_scripts/jsonConversion.py "${{ github.event.inputs.md_filename }}"
+          python jsonConversion.py "${{ github.event.inputs.md_filename }}"

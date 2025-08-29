@@ -1,7 +1,6 @@
 import json
 import argparse
 import os
-import jsonschema
 
 # Updated JSON schema to match your desired output structure
 example_schema = {
